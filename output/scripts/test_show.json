@@ -1,0 +1,51 @@
+{
+  "show_title": "आज की बड़ी खबरें",
+  "show_title_english": "Today's Big News",
+  "intro_hindi": "नमस्कार! आज की सबसे बड़ी और हैरान कर देने वाली खबरें लेकर हम आ गए हैं।",
+  "outro_hindi": "यह थीं आज की प्रमुख खबरें। जुड़े रहिए हमारे साथ।",
+  "segments": [
+    {
+      "id": 1,
+      "category": "Technology",
+      "category_hindi": "तकनीक",
+      "headline_hindi": "AI ने बदल दिया विज्ञान का इतिहास!",
+      "headline_english": "AI Changes Scientific Research",
+      "narration_hindi": "दोस्तों, आज एक ऐसी खबर आई है जो आपको हैरान कर देगी! [रुकिए...] दुनिया के सबसे बड़े AI ने विज्ञान में एक नया इतिहास रच दिया है। यह खोज पूरी मानवजाति के लिए एक बड़ी उपलब्धि है।",
+      "key_points_hindi": [
+        "AI ने नई दवा खोजी",
+        "लाखों लोगों को फायदा होगा"
+      ],
+      "impact_score": 9,
+      "emotion": "exciting",
+      "visual_cue": "Show AI lab footage",
+      "lower_third": "तकनीक की नई क्रांति",
+      "breaking": true,
+      "color": "#0074D9",
+      "emoji": "💻"
+    },
+    {
+      "id": 2,
+      "category": "India",
+      "category_hindi": "भारत",
+      "headline_hindi": "भारत ने रचा नया इतिहास!",
+      "headline_english": "India Launches Chandrayaan-4",
+      "narration_hindi": "भारत के लिए आज का दिन बेहद खास है। [रुकिए...] ISRO ने चंद्रयान-4 को सफलतापूर्वक लॉन्च कर दिया है। यह भारत की अंतरिक्ष यात्रा में एक नया अध्याय है।",
+      "key_points_hindi": [
+        "चंद्रयान-4 लॉन्च सफल",
+        "चाँद पर नया रोवर"
+      ],
+      "impact_score": 8,
+      "emotion": "inspiring",
+      "visual_cue": "ISRO launch footage",
+      "lower_third": "भारत की अंतरिक्ष यात्रा",
+      "breaking": false,
+      "color": "#FF851B",
+      "emoji": "🇮🇳"
+    }
+  ],
+  "ticker_items": [
+    "ब्रेकिंग: AI का नया युग",
+    "भारत का चंद्रयान-4 लॉन्च",
+    "विश्व AI समझौता"
+  ]
+}

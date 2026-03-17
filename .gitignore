@@ -1,0 +1,40 @@
+# Environment
+.env
+*.env
+
+# Output files (videos, audio, etc.)
+output/videos/
+output/audio/
+output/previews/
+output/generator.log
+
+# Keep scripts (useful for reuse)
+# output/scripts/  <- NOT ignored
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.egg-info/
+dist/
+build/
+.eggs/
+*.egg
+
+# Virtual environments
+venv/
+.venv/
+env/
+
+# IDEs
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# macOS
+.DS_Store
+
+# Temp files
+temp_audio.m4a
+*.tmp

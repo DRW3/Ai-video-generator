@@ -1,0 +1,31 @@
+{
+  "_comment": "AI News Video Generator Configuration",
+  "max_news": 8,
+  "categories": null,
+  "use_google_news": true,
+  "use_rss_feeds": true,
+  "generate_audio": true,
+  "generate_video": true,
+  "save_scripts": true,
+  "output_dir": "output",
+  "video_quality": {
+    "fps": 30,
+    "width": 1280,
+    "height": 720,
+    "codec": "libx264",
+    "audio_codec": "aac"
+  },
+  "tts": {
+    "language": "hi",
+    "slow": false
+  },
+  "show_settings": {
+    "show_name": "आज की बड़ी खबरें",
+    "show_name_english": "Today's Top News",
+    "channel_name": "AI NEWS",
+    "intro_duration": 5,
+    "outro_duration": 5,
+    "segment_headline_duration": 4,
+    "segment_card_duration": 10
+  }
+}

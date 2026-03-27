@@ -114,10 +114,17 @@ class TTSGenerator:
             audio_files["intro"] = str(path)
 
         # Welcome jingle text
-        welcome_text = (
-            "आइए जानते हैं आज की सबसे बड़ी और महत्वपूर्ण खबरें। "
-            "यह हैं हमारी टॉप स्टोरीज।"
-        )
+        upsc_mode = show_data.get("upsc_mode", False)
+        if upsc_mode:
+            welcome_text = (
+                "नमस्कार UPSC aspirants! आज के करंट अफेयर्स जो "
+                "Prelims और Mains दोनों के लिए ज़रूरी हैं।"
+            )
+        else:
+            welcome_text = (
+                "आइए जानते हैं आज की सबसे बड़ी और महत्वपूर्ण खबरें। "
+                "यह हैं हमारी टॉप स्टोरीज।"
+            )
         path = self.text_to_speech(welcome_text, "welcome", slow=False)
         if path:
             audio_files["welcome"] = str(path)
@@ -126,10 +133,17 @@ class TTSGenerator:
         for i, segment in enumerate(segments, 1):
             logger.info(f"Generating audio for segment {i}/{len(segments)}...")
 
-            # Category announcement
+            # Category / GS paper announcement
             cat_hindi = segment.get("category_hindi", "समाचार")
             breaking = segment.get("breaking", False)
-            if breaking:
+            gs_paper = segment.get("gs_paper", "")
+
+            if upsc_mode and gs_paper:
+                if breaking:
+                    announcement = f"ब्रेकिंग! {gs_paper} — {cat_hindi} से बड़ी खबर।"
+                else:
+                    announcement = f"{gs_paper} — {cat_hindi} की खबर।"
+            elif breaking:
                 announcement = f"ब्रेकिंग न्यूज़! {cat_hindi} की बड़ी खबर।"
             else:
                 announcement = f"अब {cat_hindi} की खबर।"
@@ -156,7 +170,10 @@ class TTSGenerator:
         logger.info("Generating show outro audio...")
         outro_text = show_data.get("outro_hindi", "")
         if not outro_text:
-            outro_text = "यह थीं आज की प्रमुख खबरें। जुड़े रहिए हमारे साथ।"
+            if upsc_mode:
+                outro_text = "यह थे आज के UPSC करंट अफेयर्स। पढ़ते रहो, आगे बढ़ते रहो।"
+            else:
+                outro_text = "यह थीं आज की प्रमुख खबरें। जुड़े रहिए हमारे साथ।"
         full_outro = f"{outro_text} हमारे चैनल को सब्सक्राइब करें। धन्यवाद!"
         path = self.text_to_speech(full_outro, "outro", slow=False)
         if path:

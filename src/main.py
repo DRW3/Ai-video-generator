@@ -88,9 +88,17 @@ def generate_video_filename(show_data: dict) -> str:
     return f"news_{top_cat.lower()}_{ts}.mp4"
 
 
-def print_banner():
+def print_banner(upsc_mode: bool = False):
     """Print startup banner."""
-    banner = """
+    if upsc_mode:
+        banner = """
+╔══════════════════════════════════════════════════════════════╗
+║    📚 UPSC AI NEWS — करंट अफेयर्स हिंदी वीडियो जेनरेटर       ║
+║    GS1 • GS2 • GS3 • GS4  |  Prelims • Mains Ready        ║
+╚══════════════════════════════════════════════════════════════╝
+    """
+    else:
+        banner = """
 ╔══════════════════════════════════════════════════════════════╗
 ║         🎬 AI NEWS VIDEO GENERATOR — हिंदी न्यूज़ वीडियो         ║
 ║         Powered by Claude AI + gTTS + MoviePy               ║
@@ -139,10 +147,12 @@ def run_pipeline(args, config: dict) -> dict:
         if isinstance(categories, str):
             categories = [c.strip() for c in categories.split(",")]
 
+        upsc_mode = config.get("upsc_mode", False)
         articles = get_latest_news(
             max_articles=config["max_news"],
             use_google_news=config["use_google_news"],
             use_rss_feeds=config["use_rss_feeds"],
+            upsc_mode=upsc_mode,
             categories=categories,
         )
 
@@ -166,7 +176,7 @@ def run_pipeline(args, config: dict) -> dict:
         logger.info("=" * 60)
 
         processor = ContentProcessor()
-        show_data = processor.process_news(articles)
+        show_data = processor.process_news(articles, upsc_mode=upsc_mode)
         results["segments_generated"] = len(show_data.get("segments", []))
 
         # Save script
@@ -182,8 +192,11 @@ def run_pipeline(args, config: dict) -> dict:
         print(f"  Title: {show_data.get('show_title', '')}")
         for seg in show_data.get("segments", []):
             breaking_tag = " ⚡BREAKING" if seg.get("breaking") else ""
+            gs_tag = f" [{seg.get('gs_paper', '')}]" if upsc_mode and seg.get("gs_paper") else ""
+            exam_tag = f" Exam:{seg.get('exam_relevance_score', '')}★" if upsc_mode else ""
             print(
-                f"  {seg['id']:2d}. [{seg['category']:12s}] {seg.get('headline_hindi', '')[:50]}{breaking_tag}"
+                f"  {seg['id']:2d}. [{seg['category']:20s}]{gs_tag}{exam_tag} "
+                f"{seg.get('headline_hindi', '')[:45]}{breaking_tag}"
             )
 
     # ─────────────────────────────────────────────
@@ -236,6 +249,7 @@ def run_pipeline(args, config: dict) -> dict:
                 show_data=show_data,
                 audio_files=audio_files,
                 output_filename=video_filename,
+                upsc_mode=show_data.get("upsc_mode", False),
             )
             results["video_path"] = video_path
         except Exception as e:
@@ -270,10 +284,13 @@ def run_pipeline(args, config: dict) -> dict:
 
 
 def main():
-    print_banner()
+    # Peek at args early to set UPSC banner
+    import sys as _sys
+    _upsc_early = "--upsc" in _sys.argv
+    print_banner(upsc_mode=_upsc_early)
 
     parser = argparse.ArgumentParser(
-        description="AI News Video Generator — Hindi News Show"
+        description="AI News Video Generator — Hindi News Show (with UPSC mode)"
     )
     parser.add_argument(
         "--max-news",
@@ -331,6 +348,15 @@ def main():
         help="Config file path (default: config.json)",
     )
     parser.add_argument(
+        "--upsc",
+        action="store_true",
+        help=(
+            "UPSC mode: fetches GS-relevant news (PIB, PRS, editorial), adds "
+            "GS paper tags (GS1-GS4), Prelims MCQ facts, Mains question angles, "
+            "key terms, syllabus tags, and exam relevance scores to every segment."
+        ),
+    )
+    parser.add_argument(
         "--debug",
         action="store_true",
         help="Enable debug logging",
@@ -352,6 +378,7 @@ def main():
             "generate_audio": not args.no_audio,
             "generate_video": not args.no_video and not args.preview,
             "output_dir": args.output,
+            "upsc_mode": args.upsc,
         }
     )
 

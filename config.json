@@ -2,6 +2,7 @@
   "_comment": "AI News Video Generator Configuration",
   "max_news": 8,
   "categories": null,
+  "upsc_mode": false,
   "use_google_news": true,
   "use_rss_feeds": true,
   "generate_audio": true,

@@ -9,6 +9,15 @@ Features:
   - Lower thirds with source attribution
   - Smooth transitions between segments
   - Animated logo and broadcast watermark
+
+UPSC Mode adds:
+  - GS paper badge (GS1/GS2/GS3/GS4) with color coding
+  - Prelims Corner panel with exam-ready MCQ fact
+  - Mains Angle callout box
+  - Syllabus topic tags (chips row)
+  - Key Terms strip
+  - Exam Relevance meter (replaces Impact meter)
+  - UPSC branding in watermark
 """
 
 import os
@@ -210,15 +219,168 @@ def _draw_category_badge(
     draw.text((x + padding, y + padding // 2), badge_text, fill=(255, 255, 255), font=font)
 
 
+def _draw_gs_badge(
+    draw: ImageDraw.Draw,
+    gs_paper: str,
+    gs_color_hex: str,
+    x: int,
+    y: int,
+) -> int:
+    """Draw GS paper badge (e.g. GS2) and return right edge x."""
+    gs_color = _hex_to_rgb(gs_color_hex)
+    font = _find_font(16, bold=True)
+    badge_text = f"📚 {gs_paper}"
+    bbox = draw.textbbox((0, 0), badge_text, font=font)
+    bw = bbox[2] - bbox[0]
+    ph = 8  # padding
+    draw.rounded_rectangle(
+        [(x, y), (x + bw + ph * 2, y + 36)],
+        radius=6,
+        fill=(*gs_color, 220),
+    )
+    draw.text((x + ph, y + 8), badge_text, fill=(255, 255, 255), font=font)
+    return x + bw + ph * 2 + 6  # next badge start x
+
+
+def _draw_syllabus_tags(
+    draw: ImageDraw.Draw,
+    tags: list[str],
+    x: int,
+    y: int,
+    max_width: int,
+):
+    """Draw a row of small syllabus topic chip tags."""
+    tag_font = _find_font(13)
+    cur_x = x
+    for tag in tags[:6]:
+        bbox = draw.textbbox((0, 0), tag, font=tag_font)
+        tw = bbox[2] - bbox[0]
+        chip_w = tw + 14
+        if cur_x + chip_w > x + max_width:
+            break
+        draw.rounded_rectangle(
+            [(cur_x, y), (cur_x + chip_w, y + 24)],
+            radius=5,
+            fill=(40, 60, 100, 200),
+        )
+        draw.rectangle(
+            [(cur_x, y), (cur_x + 3, y + 24)],
+            fill=(100, 160, 255, 220),
+        )
+        draw.text((cur_x + 7, y + 5), tag, fill=(180, 210, 255), font=tag_font)
+        cur_x += chip_w + 6
+
+
+def _draw_prelims_corner(
+    draw: ImageDraw.Draw,
+    fact: str,
+    x: int,
+    y: int,
+    w: int,
+    h: int,
+):
+    """Draw the 'Prelims Corner' panel with a quick MCQ fact."""
+    # Panel background — amber tinted
+    draw.rounded_rectangle(
+        [(x, y), (x + w, y + h)],
+        radius=8,
+        fill=(60, 45, 5, 230),
+    )
+    draw.rounded_rectangle(
+        [(x, y), (x + w, y + h)],
+        radius=8,
+        outline=(245, 180, 20, 200),
+        width=2,
+    )
+    # Header bar
+    draw.rectangle([(x, y), (x + w, y + 28)], fill=(200, 140, 0, 220))
+    header_font = _find_font(14, bold=True)
+    draw.text((x + 8, y + 7), "📝 PRELIMS CORNER", fill=(255, 255, 255), font=header_font)
+
+    # Fact text
+    fact_font = _find_font(14)
+    wrapped = _wrap_text(fact[:160], int(w / 8))
+    fy = y + 35
+    for line in wrapped[:3]:
+        draw.text((x + 8, fy), line, fill=(255, 230, 150), font=fact_font)
+        fy += 20
+
+
+def _draw_mains_angle(
+    draw: ImageDraw.Draw,
+    question: str,
+    x: int,
+    y: int,
+    w: int,
+    h: int,
+):
+    """Draw the 'Mains Angle' callout box with a mains-style question."""
+    draw.rounded_rectangle(
+        [(x, y), (x + w, y + h)],
+        radius=8,
+        fill=(5, 30, 60, 230),
+    )
+    draw.rounded_rectangle(
+        [(x, y), (x + w, y + h)],
+        radius=8,
+        outline=(30, 144, 255, 200),
+        width=2,
+    )
+    # Header
+    draw.rectangle([(x, y), (x + w, y + 28)], fill=(10, 80, 180, 220))
+    header_font = _find_font(14, bold=True)
+    draw.text((x + 8, y + 7), "✍️ MAINS ANGLE", fill=(255, 255, 255), font=header_font)
+
+    # Question text
+    q_font = _find_font(13)
+    wrapped = _wrap_text(question[:200], int(w / 7.5))
+    qy = y + 35
+    for line in wrapped[:4]:
+        draw.text((x + 8, qy), line, fill=(160, 200, 255), font=q_font)
+        qy += 19
+
+
+def _draw_key_terms_strip(
+    draw: ImageDraw.Draw,
+    terms: list[str],
+    x: int,
+    y: int,
+    w: int,
+):
+    """Draw a horizontal strip of key terms."""
+    if not terms:
+        return
+    term_font = _find_font(13, bold=True)
+    draw.rectangle([(x, y), (x + w, y + 30)], fill=(10, 20, 50, 220))
+    label_font = _find_font(13)
+    draw.text((x + 5, y + 8), "Key Terms:", fill=(180, 180, 200), font=label_font)
+
+    cur_x = x + 85
+    for term in terms[:5]:
+        bbox = draw.textbbox((0, 0), term, font=term_font)
+        tw = bbox[2] - bbox[0]
+        if cur_x + tw + 16 > x + w:
+            break
+        draw.rounded_rectangle(
+            [(cur_x, y + 5), (cur_x + tw + 12, y + 25)],
+            radius=4,
+            fill=(30, 100, 200, 180),
+        )
+        draw.text((cur_x + 6, y + 8), term, fill=(200, 230, 255), font=term_font)
+        cur_x += tw + 18
+
+
 def _draw_news_card(
     frame: np.ndarray,
     segment: dict,
     t: float,
     card_progress: float,  # 0.0 to 1.0 (animation progress)
+    upsc_mode: bool = False,
 ) -> np.ndarray:
     """
     Draw a full news card overlay on the frame.
     card_progress: 0=entering, 0.5=visible, 1=exiting
+    upsc_mode: adds GS badge, prelims fact, mains angle, key terms, syllabus tags
     """
     img = Image.fromarray(frame)
     draw = ImageDraw.Draw(img, "RGBA")
@@ -236,29 +398,34 @@ def _draw_news_card(
     breaking = segment.get("breaking", False)
     impact = segment.get("impact_score", 5)
 
+    # UPSC fields
+    gs_paper = segment.get("gs_paper", "")
+    gs_color_hex = segment.get("gs_color", "#6366F1")
+    syllabus_tags = segment.get("syllabus_tags", [])
+    prelims_fact = segment.get("prelims_fact", "")
+    mains_angle = segment.get("mains_angle", "")
+    key_terms = segment.get("key_terms", [])
+    exam_score = segment.get("exam_relevance_score", impact)
+
     # Animation easing
     ease = _ease_in_out(card_progress)
 
-    # --- Main content area (center card) ---
+    # --- Main content area ---
+    # In UPSC mode the main card is narrower to make room for side panels
     card_x = 40
-    card_y = 80
-    card_w = w - 80
-    card_h = h - 180
+    card_y = 55 if upsc_mode else 80
+    side_panel_w = 340 if upsc_mode else 0
+    card_w = w - 80 - side_panel_w
+    card_h = h - (160 if upsc_mode else 180)
 
-    # Slide-in animation from left
     slide_offset = int((1 - ease) * -w)
 
-    # Card background with transparency
+    # Card background
     card_bg = Image.new("RGBA", (card_w, card_h), (10, 15, 40, 220))
     card_draw = ImageDraw.Draw(card_bg, "RGBA")
 
-    # Left accent bar with category color
-    card_draw.rectangle(
-        [(0, 0), (6, card_h)],
-        fill=(*seg_color, 255),
-    )
-
-    # Glowing effect on accent bar
+    # Left accent bar
+    card_draw.rectangle([(0, 0), (6, card_h)], fill=(*seg_color, 255))
     glow_intensity = int(150 + math.sin(t * 2) * 50)
     for i in range(1, 6):
         alpha = max(0, glow_intensity - i * 25)
@@ -267,69 +434,102 @@ def _draw_news_card(
             fill=(*seg_color, alpha),
         )
 
-    # Category badge in card
+    # Badge row: category badge + GS badge (UPSC) + breaking badge
     cat_font = _find_font(20, bold=True)
     badge_text = f"{emoji} {category_hindi}"
-    card_draw.rectangle(
-        [(20, 15), (300, 55)],
-        fill=(*seg_color, 200),
-    )
+    card_draw.rectangle([(20, 15), (280, 52)], fill=(*seg_color, 200))
     card_draw.text((30, 20), badge_text, fill=(255, 255, 255), font=cat_font)
 
-    # Breaking badge if applicable
+    badge_x = 290
+    if upsc_mode and gs_paper:
+        badge_x = _draw_gs_badge(card_draw, gs_paper, gs_color_hex, badge_x, 15)
+
     if breaking:
         pulse = int(180 + math.sin(t * 4) * 75)
         card_draw.rectangle(
-            [(310, 15), (500, 55)],
+            [(badge_x, 15), (badge_x + 165, 52)],
             fill=(pulse, 0, 20, 230),
         )
         break_font = _find_font(16, bold=True)
-        card_draw.text((320, 22), "⚡ ब्रेकिंग", fill=(255, 220, 0), font=break_font)
+        card_draw.text((badge_x + 10, 22), "⚡ ब्रेकिंग", fill=(255, 220, 0), font=break_font)
 
-    # Headline (large Hindi text)
-    headline_font = _find_font(32, bold=True)
-    headline_y = 75
-    wrapped_headline = _wrap_text(headline_hindi, 45)
+    # Headline
+    headline_font = _find_font(30, bold=True)
+    headline_y = 68
+    wrapped_headline = _wrap_text(headline_hindi, 42 if upsc_mode else 45)
     for line in wrapped_headline[:2]:
         card_draw.text((20, headline_y), line, fill=(255, 255, 255), font=headline_font)
-        headline_y += 42
+        headline_y += 38
+
+    # Syllabus tags row (UPSC)
+    if upsc_mode and syllabus_tags:
+        _draw_syllabus_tags(card_draw, syllabus_tags, 20, headline_y + 2, card_w - 40)
+        headline_y += 32
 
     # Divider line
     card_draw.line(
-        [(20, headline_y + 5), (card_w - 20, headline_y + 5)],
+        [(20, headline_y + 6), (card_w - 20, headline_y + 6)],
         fill=(*seg_color, 180),
         width=2,
     )
 
-    # Narration excerpt (first 100 chars)
-    narr_font = _find_font(22)
-    narr_text = narration[:200].replace("[रुकिए...]", "...") if narration else ""
-    narr_y = headline_y + 20
-    wrapped_narr = _wrap_text(narr_text, 65)
-    for line in wrapped_narr[:3]:
+    # Narration excerpt
+    narr_font = _find_font(21)
+    narr_text = narration[:190].replace("[रुकिए...]", "...") if narration else ""
+    narr_y = headline_y + 18
+    max_narr_lines = 2 if upsc_mode else 3
+    wrapped_narr = _wrap_text(narr_text, 58 if upsc_mode else 65)
+    for line in wrapped_narr[:max_narr_lines]:
         card_draw.text((20, narr_y), line, fill=(200, 210, 230), font=narr_font)
-        narr_y += 30
+        narr_y += 28
 
     # Key points bullets
     if key_points:
-        bullet_font = _find_font(19)
-        bullet_y = narr_y + 10
-        for point in key_points[:3]:
-            if bullet_y > card_h - 60:
+        bullet_font = _find_font(18)
+        bullet_y = narr_y + 8
+        max_pts = 2 if upsc_mode else 3
+        for point in key_points[:max_pts]:
+            if bullet_y > card_h - 55:
                 break
-            point_text = f"▶  {point[:70]}"
-            card_draw.text((25, bullet_y), point_text, fill=(180, 230, 180), font=bullet_font)
-            bullet_y += 28
+            card_draw.text(
+                (25, bullet_y),
+                f"▶  {point[:65]}",
+                fill=(180, 230, 180),
+                font=bullet_font,
+            )
+            bullet_y += 26
 
-    # Impact meter
-    _draw_impact_meter(card_draw, impact, card_w - 140, 20, 120, 30, seg_color)
+    # Key terms strip (UPSC)
+    if upsc_mode and key_terms:
+        kt_y = card_h - 48
+        _draw_key_terms_strip(card_draw, key_terms, 10, kt_y, card_w - 20)
 
-    # Paste card onto main image with slide-in offset
-    img.paste(
-        card_bg,
-        (card_x + slide_offset, card_y),
-        mask=card_bg.split()[3],
+    # Impact / Exam relevance meter
+    meter_score = exam_score if upsc_mode else impact
+    meter_label = "Exam Rel." if upsc_mode else "Impact"
+    _draw_impact_meter(
+        card_draw, meter_score, card_w - 145, 18, 120, 28, seg_color,
+        label=meter_label,
     )
+
+    # Paste main card
+    img.paste(card_bg, (card_x + slide_offset, card_y), mask=card_bg.split()[3])
+
+    # --- UPSC side panels (right column) ---
+    if upsc_mode:
+        panel_x = w - side_panel_w - 30 + int((1 - ease) * side_panel_w)
+        panel_y = card_y
+        panel_inner_w = side_panel_w - 10
+
+        if prelims_fact:
+            prelims_h = 110
+            _draw_prelims_corner(draw, prelims_fact, panel_x, panel_y, panel_inner_w, prelims_h)
+            panel_y += prelims_h + 10
+
+        if mains_angle:
+            mains_h = 120
+            _draw_mains_angle(draw, mains_angle, panel_x, panel_y, panel_inner_w, mains_h)
+            panel_y += mains_h + 10
 
     # --- Breaking news banner (top) ---
     if breaking:
@@ -344,21 +544,18 @@ def _draw_news_card(
 
     # --- Lower third ---
     if lower_third:
-        lt_h = 65
+        lt_h = 60
         lt_y = h - lt_h - 40
         lower_bg = Image.new("RGBA", (w - 80, lt_h), (5, 10, 30, 220))
         lower_draw = ImageDraw.Draw(lower_bg, "RGBA")
-
-        # Accent line at top
         lower_draw.rectangle([(0, 0), (w - 80, 4)], fill=(*seg_color, 255))
 
-        lt_font = _find_font(24, bold=True)
-        lower_draw.text((15, 15), lower_third[:70], fill=(255, 255, 255), font=lt_font)
+        lt_font = _find_font(23, bold=True)
+        lower_draw.text((15, 10), lower_third[:70], fill=(255, 255, 255), font=lt_font)
 
-        # Source label
-        src_font = _find_font(16)
-        source = segment.get("headline_english", "")[:50]
-        lower_draw.text((15, 42), source, fill=(160, 180, 200), font=src_font)
+        src_font = _find_font(15)
+        source = segment.get("headline_english", "")[:55]
+        lower_draw.text((15, 38), source, fill=(160, 180, 200), font=src_font)
 
         img.paste(lower_bg, (40, lt_y), mask=lower_bg.split()[3])
 
@@ -373,10 +570,11 @@ def _draw_impact_meter(
     w: int,
     h: int,
     color: tuple,
+    label: str = "Impact",
 ):
-    """Draw impact score meter."""
+    """Draw impact / exam-relevance score meter."""
     score = max(1, min(10, score))
-    draw.text((x, y - 18), "Impact:", fill=(180, 180, 200), font=_find_font(14))
+    draw.text((x, y - 18), f"{label}:", fill=(180, 180, 200), font=_find_font(14))
 
     # Background bar
     draw.rounded_rectangle([(x, y), (x + w, y + h)], radius=4, fill=(20, 20, 50, 200))
@@ -535,10 +733,24 @@ def _draw_show_intro_frame(t: float, show_data: dict) -> np.ndarray:
     date_str = datetime.now().strftime("%d %B %Y")
     draw.text((cx - 80, cy + 90), date_str, fill=(160, 180, 200), font=date_font)
 
-    # Bottom accent
-    draw.rectangle([(0, VIDEO_H - 8), (VIDEO_W, VIDEO_H)], fill=(255, 200, 50))
+    # UPSC-specific intro extras: GS paper legend strip
+    upsc_mode = show_data.get("upsc_mode", False)
+    if upsc_mode:
+        gs_colors = [("#8B5CF6", "GS1"), ("#10B981", "GS2"), ("#3B82F6", "GS3"), ("#F59E0B", "GS4")]
+        lx = cx - 280
+        for hex_c, label in gs_colors:
+            rgb = _hex_to_rgb(hex_c)
+            draw.rounded_rectangle([(lx, cy + 130), (lx + 60, cy + 160)], radius=5, fill=(*rgb, 180))
+            draw.text((lx + 8, cy + 136), label, fill=(255, 255, 255), font=_find_font(18, bold=True))
+            lx += 76
+        draw.text((cx - 285, cy + 165), "GS1: History/Geo  GS2: Polity/IR  GS3: Economy/Env  GS4: Ethics",
+                  fill=(160, 180, 200), font=_find_font(13))
 
-    _draw_watermark(draw, VIDEO_W, VIDEO_H)
+    # Bottom accent — gold for standard, green for UPSC
+    accent_color = (16, 185, 129) if upsc_mode else (255, 200, 50)
+    draw.rectangle([(0, VIDEO_H - 8), (VIDEO_W, VIDEO_H)], fill=accent_color)
+
+    _draw_watermark(draw, VIDEO_W, VIDEO_H, upsc_mode=upsc_mode)
 
     return np.array(img)
 
@@ -567,11 +779,32 @@ def _draw_outro_frame(t: float, show_data: dict) -> np.ndarray:
     tw = bbox[2] - bbox[0]
     draw.text((cx - tw // 2, cy - 80), thanks_text, fill=(255, 220, 80), font=thanks_font)
 
+    upsc_mode = show_data.get("upsc_mode", False)
     sub_font = _find_font(28)
-    sub_texts = [
-        "समाचार देखते रहें",
-        "Stay Informed • Stay Ahead",
-    ]
+
+    if upsc_mode:
+        sub_texts = [
+            "पढ़ते रहो • आगे बढ़ते रहो",
+            "Keep Revising • IAS/IPS Awaits You!",
+        ]
+        # Daily tip if present
+        tip = show_data.get("daily_tip_hindi", "")
+        if tip:
+            tip_font = _find_font(20)
+            tip_bbox = draw.textbbox((0, 0), f"💡 {tip[:70]}", font=tip_font)
+            tip_w = tip_bbox[2] - tip_bbox[0]
+            draw.rounded_rectangle(
+                [(cx - tip_w // 2 - 15, cy + 90), (cx + tip_w // 2 + 15, cy + 120)],
+                radius=6,
+                fill=(20, 80, 20, 200),
+            )
+            draw.text((cx - tip_w // 2, cy + 95), f"💡 {tip[:70]}", fill=(180, 255, 180), font=tip_font)
+    else:
+        sub_texts = [
+            "समाचार देखते रहें",
+            "Stay Informed • Stay Ahead",
+        ]
+
     sub_y = cy
     for st in sub_texts:
         bbox = draw.textbbox((0, 0), st, font=sub_font)
@@ -579,34 +812,34 @@ def _draw_outro_frame(t: float, show_data: dict) -> np.ndarray:
         draw.text((cx - sw // 2, sub_y), st, fill=(200, 210, 230), font=sub_font)
         sub_y += 40
 
-    # Subscribe prompt
     sub_prompt_font = _find_font(24)
     subscribe_text = "🔔 Like • Share • Subscribe"
     bbox = draw.textbbox((0, 0), subscribe_text, font=sub_prompt_font)
     btw = bbox[2] - bbox[0]
     pulse = int(200 + math.sin(t * 3) * 55)
     draw.text(
-        (cx - btw // 2, cy + 100),
+        (cx - btw // 2, cy + 130 if upsc_mode else cy + 100),
         subscribe_text,
         fill=(pulse, 80, 80),
         font=sub_prompt_font,
     )
 
-    draw.rectangle([(0, VIDEO_H - 8), (VIDEO_W, VIDEO_H)], fill=(255, 200, 50))
-    _draw_watermark(draw, VIDEO_W, VIDEO_H)
+    accent_color = (16, 185, 129) if upsc_mode else (255, 200, 50)
+    draw.rectangle([(0, VIDEO_H - 8), (VIDEO_W, VIDEO_H)], fill=accent_color)
+    _draw_watermark(draw, VIDEO_W, VIDEO_H, upsc_mode=upsc_mode)
 
     return np.array(img)
 
 
-def _draw_watermark(draw: ImageDraw.Draw, w: int, h: int):
+def _draw_watermark(draw: ImageDraw.Draw, w: int, h: int, upsc_mode: bool = False):
     """Draw channel watermark."""
     wm_font = _find_font(16)
-    wm_text = "AI NEWS • आर्टिफिशियल न्यूज़"
-    draw.text((w - 300, 15), wm_text, fill=(120, 140, 170, 200), font=wm_font)
-
-    # Live dot
-    pulse_alpha = 200
-    draw.ellipse([(w - 320, 19), (w - 308, 31)], fill=(200, 0, 0, pulse_alpha))
+    if upsc_mode:
+        wm_text = "UPSC AI NEWS • करंट अफेयर्स"
+    else:
+        wm_text = "AI NEWS • आर्टिफिशियल न्यूज़"
+    draw.text((w - 310, 15), wm_text, fill=(120, 140, 170, 200), font=wm_font)
+    draw.ellipse([(w - 328, 19), (w - 316, 31)], fill=(200, 0, 0, 200))
 
 
 def _wrap_text(text: str, max_chars: int) -> list[str]:
@@ -668,35 +901,35 @@ class VideoRenderer:
         segment: dict,
         duration: float = 8.0,
         ticker_items: list[str] | None = None,
+        upsc_mode: bool = False,
     ) -> VideoClip:
-        """Create full news card video clip with animation."""
+        """Create full news card video clip with animation.
+
+        In UPSC mode the card has GS paper badge, Prelims Corner,
+        Mains Angle panel, syllabus tags, and key terms strip.
+        """
         ticker = ticker_items or ["आज की बड़ी खबरें देखते रहें"]
 
         def make_frame(t):
-            # Background
             frame = _draw_gradient_bg(VIDEO_W, VIDEO_H, t)
             img = Image.fromarray(frame)
             base_draw = ImageDraw.Draw(img, "RGBA")
             _draw_grid_lines(base_draw, VIDEO_W, VIDEO_H)
-
             frame = np.array(img)
 
-            # Card animation
             if t < 0.5:
-                progress = t / 0.5  # entering
+                progress = t / 0.5
             elif t > duration - 0.5:
-                progress = (duration - t) / 0.5  # exiting
+                progress = (duration - t) / 0.5
             else:
-                progress = 1.0  # fully visible
+                progress = 1.0
 
-            frame = _draw_news_card(frame, segment, t, progress)
+            frame = _draw_news_card(frame, segment, t, progress, upsc_mode=upsc_mode)
 
-            # Ticker at bottom
             ticker_img = Image.fromarray(frame)
             ticker_draw = ImageDraw.Draw(ticker_img)
             _draw_ticker(ticker_draw, ticker, VIDEO_H - 40, VIDEO_W, t)
-            _draw_watermark(ticker_draw, VIDEO_W, VIDEO_H)
-
+            _draw_watermark(ticker_draw, VIDEO_W, VIDEO_H, upsc_mode=upsc_mode)
             return np.array(ticker_img)
 
         clip = VideoClip(make_frame, duration=duration)
@@ -785,6 +1018,7 @@ class VideoRenderer:
         show_data: dict,
         audio_files: dict,
         output_filename: str = "news_show.mp4",
+        upsc_mode: bool = False,
     ) -> str:
         """
         Render the complete news show video.
@@ -930,7 +1164,8 @@ class VideoRenderer:
                     pass
 
             card_clip = self.create_news_card_clip(
-                segment, duration=card_dur, ticker_items=ticker_items
+                segment, duration=card_dur, ticker_items=ticker_items,
+                upsc_mode=upsc_mode,
             )
 
             if seg_key in audio_files:

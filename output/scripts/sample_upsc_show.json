@@ -1,0 +1,6 @@
+{
+  "show_title": "UPSC करंट अफेयर्स — आज की बड़ी खबरें",
+  "show_title_english": "UPSC Current Affairs Today",
+  "upsc_mode": true,
+  "_note": "Sample UPSC mode show data. Run python src/main.py --upsc to generate with real news."
+}

@@ -4,7 +4,9 @@
 
 # Output files (videos, audio, etc.)
 output/videos/
+output/videos_upsc/
 output/audio/
+output/audio_upsc/
 output/previews/
 output/generator.log
 
